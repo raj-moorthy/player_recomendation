@@ -8,8 +8,8 @@ import joblib
 
 
 # Load the data
-scaler = joblib.load("C:/Users/rajre/OneDrive/Documents/Player_recommendation/scaler_model.pkl")
-kmeans = joblib.load("C:/Users/rajre/OneDrive/Documents/Player_recommendation/kmeans_model.pkl")
+scaler = joblib.load("scaler_model.pkl")
+kmeans = joblib.load("kmeans_model.pkl")
 
 
 # Modified recommend_players function
