@@ -6,7 +6,7 @@ import joblib
 try:
     scaler = joblib.load("scaler_model.pkl")
     kmeans = joblib.load("kmeans_model.pkl")
-    d = pd.read_csv("IPL 2024 Statistics _ Team and Player Stats.xlsx")  #
+    d = pd.read_excel("IPL 2024 Statistics _ Team and Player Stats.xlsx")  #
 except Exception as e:
     st.error(f"Error loading required files: {e}")
     st.stop()
