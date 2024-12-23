@@ -1,24 +1,26 @@
 import streamlit as st
 import pandas as pd
-import numpy as np
 import joblib
 
-# Load the data
+# Load models and dataset
 try:
     scaler = joblib.load("scaler_model.pkl")
     kmeans = joblib.load("kmeans_model.pkl")
-    d = pd.read_excel("IPL 2024 Statistics _ Team and Player Stats.xlsx")  
+    d = pd.read_csv("IPL 2024 Statistics _ Team and Player Stats.xlsx")  #
 except Exception as e:
     st.error(f"Error loading required files: {e}")
     st.stop()
 
-# Modified recommend_players function
-def recommend_players(runs, strike_rate, scaler, kmeans):
+# Recommend players function
+def recommend_players(runs, strike_rate, scaler, kmeans, dataset):
     input_scaled = scaler.transform([[runs, strike_rate]])
     group = kmeans.predict(input_scaled)[0]
-    if group not in d['Group'].unique():
+    if 'Group' not in dataset.columns:
+        st.error("Dataset does not contain 'Group' column.")
         return None
-    recommended_players = d[d['Group'] == group]
+    if group not in dataset['Group'].unique():
+        return None
+    recommended_players = dataset[dataset['Group'] == group]
     return recommended_players[['PLAYER1', 'AVG', 'SR']]
 
 # Streamlit app
@@ -31,7 +33,7 @@ if st.button("Recommend Players"):
     if target_runs < 0 or target_strike_rate < 0:
         st.error("Please enter valid non-negative inputs.")
     else:
-        recommended = recommend_players(target_runs, target_strike_rate, scaler, kmeans)
+        recommended = recommend_players(target_runs, target_strike_rate, scaler, kmeans, d)
         if recommended is None or recommended.empty:
             st.warning("No recommendations available for the given inputs.")
         else:
