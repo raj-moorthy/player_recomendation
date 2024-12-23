@@ -15,11 +15,6 @@ except Exception as e:
 def recommend_players(runs, strike_rate, scaler, kmeans, dataset):
     input_scaled = scaler.transform([[runs, strike_rate]])
     group = kmeans.predict(input_scaled)[0]
-    if 'Group' not in dataset.columns:
-        st.error("Dataset does not contain 'Group' column.")
-        return None
-    if group not in dataset['Group'].unique():
-        return None
     recommended_players = dataset[dataset['Group'] == group]
     return recommended_players[['PLAYER1', 'AVG', 'SR']]
 
