@@ -1,57 +1,44 @@
 import streamlit as st
 import pandas as pd
+import numpy as np
 import pickle
 from sklearn.preprocessing import StandardScaler
 from sklearn.cluster import KMeans
 
-# Load the saved models and dataset
-try:
-    kmeans_model = pickle.load(open('kmeans_model.pkl', 'rb'))
-    scaler_model = pickle.load(open('scaler_model.pkl', 'rb'))
-    d = pd.read_excel("IPL 2024 Statistics _ Team and Player Stats.xlsx")
-except FileNotFoundError as e:
-    st.error(f"File not found: {e}")
-    st.stop()
-except Exception as e:
-    st.error(f"Error loading files: {e}")
-    st.stop()
+# Load the data
+d = pd.read_excel('IPL 2024 Statistics _ Team and Player Stats.xlsx')
 
-# Ensure 'Group' column exists
-if 'Group' not in d.columns:
-    st.warning("'Group' column is missing. Recomputing clusters...")
-    try:
-        if {'RUNS', 'SR'}.issubset(d.columns):  # Validate required columns
-            features = d[['RUNS', 'SR']]
-            features_scaled = scaler_model.transform(features)
-            d['Group'] = kmeans_model.predict(features_scaled)
-            st.success("'Group' column added successfully.")
-        else:
-            st.error("The dataset does not contain required columns: 'RUNS' and 'SR'.")
-            st.stop()
-    except Exception as e:
-        st.error(f"Error during cluster computation: {e}")
-        st.stop()
+# Preprocessing (if not already done and saved)
+# prompt: code for label encoder
+
+from sklearn.preprocessing import LabelEncoder
+le = LabelEncoder()
+d['AVG'] = le.fit_transform(d['AVG'])
+print(d.head())
+
+d.head()
+scaler = StandardScaler()
+features = d[['AVG', 'SR']]
+scaled_features = scaler.fit_transform(features)
+kmeans = KMeans(n_clusters=2, random_state=42)
+d['Group'] = kmeans.fit_predict(scaled_features)
+
+# ... (rest of your code for saving the model and scaler) ...
+
+# Modified recommend_players function
+def recommend_players(d, runs, strike_rate, scaler, kmeans):
+    input_scaled = scaler.transform([[runs, strike_rate]])
+    group = kmeans.predict(input_scaled)[0]
+    recommended_players = d[d['Group'] == group]
+    return recommended_players[['PLAYER1', 'AVG', 'SR']]
 
 # Streamlit app
-st.title("IPL Player Recommendation App")
+st.title("IPL Player Recommendation")
 
-# Input fields
-runs = st.number_input("Enter player runs:", value=1000, min_value=0, step=1)
-strike_rate = st.number_input("Enter player strike rate:", value=125, min_value=0, step=1)
+target_runs = st.number_input("Enter the Average score", min_value=0)
+target_strike_rate = st.number_input("Enter the strike rate", min_value=0)
 
-# Recommendation logic
 if st.button("Recommend Players"):
-    try:
-        # Scale the input values
-        input_scaled = scaler_model.transform([[runs, strike_rate]])
-        # Predict the group
-        group = kmeans_model.predict(input_scaled)[0]
-        # Filter dataset based on the group
-        recommended_players = d[d['Group'] == group]
-        if not recommended_players.empty:
-            st.write("Recommended Players:")
-            st.dataframe(recommended_players[['PLAYER1', 'RUNS', 'SR']])
-        else:
-            st.warning("No players found for the given inputs.")
-    except Exception as e:
-        st.error(f"An error occurred: {e}")
+    recommended = recommend_players(d, target_runs, target_strike_rate, scaler, kmeans)  
+    st.write("Recommended Players:")
+    st.dataframe(recommended)
